@@ -7,6 +7,8 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
+
+// 不同设备拥有不同的标识
 typedef enum {
     DEV_UNKNOWN = -1,
     DEV_TOUCH = 1,
@@ -15,6 +17,7 @@ typedef enum {
     DEV_NE30 = 102,
 } JSON_DEVICE_TYPE;
 
+// 不同命令位
 typedef enum {
     CMD_UNKNOWN = -1,
     CMD_MOVE = 0,

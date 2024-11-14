@@ -9,6 +9,7 @@
 #include <HDU/hduVector.h>
 #include <HDU/hduError.h>
 #include <HDU/hduQuaternion.h>
+#include <Eigen/Dense>
 #include "json_msg_builder.hpp"
 
 
@@ -20,7 +21,7 @@ private:
     HHD hHD;
     HDSchedulerHandle hPoseCallback;
     HDSchedulerHandle hForceCallback;
-    double pos[7];
+    double pos[6];
     int button1;
     int button2;
     char sendBuf[256];
@@ -46,10 +47,19 @@ private:
         device->pos[1] = positions[2];
         device->pos[2] = positions[1];
 
-        device->pos[3] = orientation[0];
-        device->pos[4] = orientation[1];
-        device->pos[5] = orientation[2];
-        device->pos[6] = orientation[3];
+        Eigen::Quaternionf quat(orientation[0], orientation[1], orientation[2], orientation[3]); // 四元数 w, x, y, z
+        Eigen::Matrix3f rx = quat.toRotationMatrix();
+        // 将四元数转换为欧拉角（单位是弧度）
+        Eigen::Vector3f euler_angles = rx.eulerAngles(2, 1, 0);
+
+        device->pos[3] = euler_angles[0];
+        device->pos[4] = euler_angles[1];
+        device->pos[5] = euler_angles[2];
+
+        // device->pos[3] = orientation[0];
+        // device->pos[4] = orientation[1];
+        // device->pos[5] = orientation[2];
+        // device->pos[6] = orientation[3];
 
         HDint nbuttons;
         hdGetIntegerv(HD_CURRENT_BUTTONS, &nbuttons);
@@ -155,9 +165,11 @@ public:
     nlohmann::json update() {
         if (button1 && !button2) {
             std::vector<double> vec(std::begin(pos), std::end(pos));
-            sprintf_s(sendBuf, "<%-5.2lf%-5.2lf%-5.2lf%-5.2lf%-5.2lf%-5.2lf%-5.2lf>\n",
-                      pos[0], pos[1], pos[2], pos[3], pos[4], pos[5], pos[6]);
-            cout << "Button1 pressed! Sending data: " << sendBuf << endl;
+            cout << "Button1 pressed! Sending data: "  << endl;
+            for (auto i : vec) {
+                cout << i << " ";
+            }
+            cout << endl;
             return build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE, vec);
         } else if (!button1 && button2) {
             cout << "Button2 pressed! Sending reset signal." << endl;
