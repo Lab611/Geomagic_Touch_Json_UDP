@@ -36,8 +36,10 @@ int main() {
             continue;
         }
 
-
-        haptic_client.send_request(msg);
+        // 这样子会发送手柄当前的绝对位置 这样做也行 但是不安全
+        // 建议是新建一个变量 记录上一次的手柄位置
+        // 然后传输手柄位置的变化量，欧拉角就直接传输
+        // haptic_client.send_request(msg);
 
         this_thread::sleep_for(chrono::milliseconds(20));
     }
