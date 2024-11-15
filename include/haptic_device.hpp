@@ -164,21 +164,25 @@ public:
 
     nlohmann::json update() {
         if (button1 && !button2) {
+            // 只按下了 button 1
             std::vector<double> vec(std::begin(pos), std::end(pos));
-            cout << "Button1 pressed! Sending data: "  << endl;
-            for (auto i : vec) {
+            cout << "Button1 pressed! Sending data: " << endl;
+            for (auto i: vec) {
                 cout << i << " ";
             }
             cout << endl;
             return build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE, vec);
         } else if (!button1 && button2) {
+            // 只按下了 button 2
             cout << "Button2 pressed! Sending reset signal." << endl;
             return build_json_from_cmd(DEV_TOUCH, CMD_RESET);
         } else if (button1 && button2) {
+            // button 1 button 2 同时按下
             cout << "Both buttons pressed! Stopping..." << endl;
             isRunning = false;
             return build_json_from_cmd(DEV_TOUCH, CMD_QUIT);
         }
+        // 返回空
         return build_json_from_cmd(DEV_TOUCH, CMD_UNKNOWN);
     }
 

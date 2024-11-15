@@ -20,18 +20,21 @@ int main() {
         return -1;
     }
 
-    cout << "Press ESC to exit." << endl;
+    cout << "Press q to quit." << endl;
     while (device.isRunningStatus()) {
-        if (_kbhit() && _getch() == 27) {
-            break;
+        if (_kbhit()) {
+            // 按下 q 退出程序
+            auto c_ = _getch();
+            if (c_ == 'q' || c_ == 'Q') { break; }
         }
         // 手柄的位置信息在 msg 中
         auto msg = device.update();
-
+        // 消息为空 跳过
         if (msg.empty()) {
             this_thread::sleep_for(chrono::milliseconds(10));
             continue;
         }
+        // 命令位为空 跳过
         if (msg.contains("cmd") && msg["cmd"] == CMD_UNKNOWN) {
             this_thread::sleep_for(chrono::milliseconds(10));
             continue;
@@ -40,6 +43,9 @@ int main() {
         // 这样子会发送手柄当前的绝对位置 这样做也行 但是不安全
         // 建议是新建一个变量 记录上一次的手柄位置
         // 然后传输手柄位置的变化量，欧拉角就直接传输
+        // 需要注意坐标变化
+        // NE 30 需要发送 mm 为单位 rad 为单位
+        // auto msg_send = build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE, 位移量 + 欧拉角的长度为 6 的 vector);
         // haptic_client.send_request(msg);
 
         this_thread::sleep_for(chrono::milliseconds(20));
