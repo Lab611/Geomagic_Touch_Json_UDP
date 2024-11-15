@@ -25,6 +25,7 @@ int main() {
         if (_kbhit() && _getch() == 27) {
             break;
         }
+        // 手柄的位置信息在 msg 中
         auto msg = device.update();
 
         if (msg.empty()) {
