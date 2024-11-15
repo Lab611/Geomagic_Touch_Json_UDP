@@ -27,7 +27,18 @@ private:
     char sendBuf[256];
     bool isRunning;
 
-    static HDCallbackCode HDCALLBACK poseCallback(void *pUserData) {
+    // 左乘
+    hduMatrix rotation_left_offset = hduMatrix(1.0, 0.0, 0.0, 0.0,
+                                               0.0, 1.0, 0.0, 0.0,
+                                               0.0, 0.0, 1.0, 0.0,
+                                               0.0, 0.0, 0.0, 1.0);
+    // 右乘
+    hduMatrix rotation_right_offset = hduMatrix(1.0, 0.0, 0.0, 0.0,
+                                                0.0, 1.0, 0.0, 0.0,
+                                                0.0, 0.0, 1.0, 0.0,
+                                                0.0, 0.0, 0.0, 1.0);
+
+    HDCallbackCode HDCALLBACK poseCallback(void *pUserData) {
         auto *device = static_cast<HapticDevice *>(pUserData);
 
         hduVector3Dd positions;
@@ -41,6 +52,11 @@ private:
         hduMatrix rotation(transform);
 
         rotation.getRotationMatrix(rotation);
+        // 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 2.0, -1.0, 0.0, 0.0, 0.0, 3.0, 4.0, 5.0, 6.0
+        // rotation_left_offset.getRotationMatrix(rotation_left_offset);
+        // rotation_right_offset.getRotationMatrix(rotation_right_offset);
+        // orientation = hduQuaternion(rotation_left_offset * rotation * rotation_right_offset);
+
         orientation = hduQuaternion(rotation);
 
         device->pos[0] = -positions[0];
@@ -49,6 +65,7 @@ private:
 
         Eigen::Quaternionf quat(orientation[0], orientation[1], orientation[2], orientation[3]); // 四元数 w, x, y, z
         Eigen::Matrix3f rx = quat.toRotationMatrix();
+
         // 将四元数转换为欧拉角（单位是弧度）
         Eigen::Vector3f euler_angles = rx.eulerAngles(2, 1, 0);
 
