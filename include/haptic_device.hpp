@@ -38,7 +38,7 @@ private:
                                                 0.0, 0.0, 1.0, 0.0,
                                                 0.0, 0.0, 0.0, 1.0);
 
-    HDCallbackCode HDCALLBACK poseCallback(void *pUserData) {
+    static HDCallbackCode HDCALLBACK poseCallback(void *pUserData) {
         auto *device = static_cast<HapticDevice *>(pUserData);
 
         hduVector3Dd positions;
