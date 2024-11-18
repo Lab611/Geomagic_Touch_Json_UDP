@@ -10,6 +10,7 @@ using namespace std;
 
 const string IP_ = "192.168.2.38";
 constexpr int port_ = 8080;
+constexpr bool moveAbs = true;
 
 int main() {
     HapticDevice device;
@@ -19,6 +20,8 @@ int main() {
         cerr << "Failed to initialize the haptic device. Exiting..." << endl;
         return -1;
     }
+    // 绝对位置控制
+    device.setMoveAbs(moveAbs);
 
     cout << "Press q to quit." << endl;
     while (device.isRunningStatus()) {
@@ -40,6 +43,17 @@ int main() {
             continue;
         }
 
+        if (msg.contains("cmd") && (msg["cmd"] == CMD_MOVE || msg["cmd"] == CMD_MOVE_ABS)) {
+            // nlohmann::json{{"device", device}, {"cmd", cmd}, {"data", pos_and_rot}};
+            // std::cout << msg.dump(4) << std::endl;
+            haptic_client.send_request(msg);
+        }
+
+        // 命令位为 reset
+        if (msg.contains("cmd") && msg["cmd"] == CMD_RESET) {
+            haptic_client.send_request(msg);
+        }
+
         // 这样子会发送手柄当前的绝对位置 这样做也行 但是不安全
         // 建议是新建一个变量 记录上一次的手柄位置
         // 然后传输手柄位置的变化量，欧拉角就直接传输
@@ -48,7 +62,7 @@ int main() {
         // auto msg_send = build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE, 位移量 + 欧拉角的长度为 6 的 vector);
         // haptic_client.send_request(msg);
 
-        this_thread::sleep_for(chrono::milliseconds(20));
+        this_thread::sleep_for(chrono::milliseconds(10));
     }
 
     cout << "Exiting program." << endl;

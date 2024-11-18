@@ -21,7 +21,7 @@ typedef enum {
 typedef enum {
     CMD_UNKNOWN = -1,
     CMD_MOVE = 0,
-    CMD_PAUSE = 1,
+    CMD_MOVE_ABS = 1,
     CMD_RESET = 2,
     CMD_QUIT = 3,
 } JSON_CMD_TYPE;
