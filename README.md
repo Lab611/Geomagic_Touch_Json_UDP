@@ -4,13 +4,17 @@
 
 msvc 可以通过下载 vs 安装 也可以直接下载对应版本
 
+Clion 的工具链 生成器需要如图所示设置
+
+![img.png](imgs/clion.png)
+
 # 文件结构
 
 ## 3rdparty
 
 所有第三方库
 
-1. `eigen-3.4.0` [Eigen 3.4.0](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+1. `eigen-3.4.0` [Eigen 3.4.0](https://eigen.tuxfamily.org/index.php?title=Main_Page) 可能需要自己官网下载重新一次 eigen 库
 2. `openhaptics` [手柄 SDK](https://support.3dsystems.com/s/article/OpenHaptics-for-Windows-Developer-Edition-v35?language=en_US)
 3. `nlohmann` [nlohmann/json](https://github.com/nlohmann/json)
 
