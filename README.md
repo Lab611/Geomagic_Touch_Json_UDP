@@ -1,4 +1,6 @@
-# Clion 编译的 NE 30 Controller
+# Clion 编译的 Touch 位姿读取工具
+
+把 Touch 的位姿通过 json 格式实时传输到 UDP socket
 
 理论上来说 环境都齐了 需要使用 msvc 做为编译器
 
