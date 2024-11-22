@@ -201,7 +201,11 @@ public:
             isRunning = false;
             return build_json_from_cmd(DEV_TOUCH, CMD_QUIT);
         }
-        last_button_1_state = false;
+        if (last_button_1_state == true) {
+            // 松开了 button 1 那么发送让其记录位置
+            last_button_1_state = false;
+            build_json_from_cmd(DEV_TOUCH, CMD_SET_ABS);
+        }
         // 返回空
         return build_json_from_cmd(DEV_TOUCH, CMD_UNKNOWN);
     }
