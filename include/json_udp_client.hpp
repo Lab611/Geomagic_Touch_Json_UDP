@@ -1,5 +1,5 @@
-#ifndef JSON_UDP_CLIENT_H
-#define JSON_UDP_CLIENT_H
+#ifndef JSON_UDP_CLIENT_HPP
+#define JSON_UDP_CLIENT_HPP
 
 #include <iostream>
 #include <winsock2.h>
@@ -65,4 +65,4 @@ void JsonUdpClient::send_request(const json& request) {
     }
 }
 
-#endif // JSON_UDP_CLIENT_H
+#endif // JSON_UDP_CLIENT_HPP
