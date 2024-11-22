@@ -21,29 +21,19 @@ private:
     HHD hHD;
     HDSchedulerHandle hPoseCallback;
     HDSchedulerHandle hForceCallback;
-    double pos[6];
+
+    Eigen::MatrixXd cur_trans_matrix = Eigen::MatrixXd::Identity(4, 4);
+    Eigen::MatrixXd last_trans_matrix = Eigen::MatrixXd::Identity(4, 4);
+
     int button1;
     int button2;
     char sendBuf[256];
     bool isRunning;
     bool last_button_1_state = false;
-    vector<double> last_vec = vector<double>();
     bool moveAbs = false;
 
 
     static HDCallbackCode HDCALLBACK poseCallback(void *pUserData) {
-        // 左乘
-        const hduMatrix rotation_left_offset = hduMatrix(-1.0, 0.0, 0.0, 0.0,
-                                                         0.0, 0.0, -1.0, 0.0,
-                                                         0.0, -1.0, 0.0, 0.0,
-                                                         0.0, 0.0, 0.0, 1.0);
-
-        // 右乘
-        const hduMatrix rotation_right_offset = hduMatrix(1.0, 0.0, 0.0, 0.0,
-                                                          0.0, 1.0, 0.0, 0.0,
-                                                          0.0, 0.0, 1.0, 0.0,
-                                                          0.0, 0.0, 0.0, 1.0);
-
         auto *device = static_cast<HapticDevice *>(pUserData);
         hduVector3Dd positions;
         hduMatrix transform;
@@ -51,44 +41,23 @@ private:
 
         hdBeginFrame(hdGetCurrentDevice());
 
-        hdGetDoublev(HD_CURRENT_POSITION, positions);
         hdGetDoublev(HD_CURRENT_TRANSFORM, transform);
-        auto apply_offset_transform = rotation_left_offset * transform.getTranspose() * rotation_right_offset;
-
+        // 获取旋转矩阵
         auto rotation = hduMatrix();
-        apply_offset_transform.getTranspose().getRotationMatrix(rotation);
-        orientation = hduQuaternion(rotation);
+        transform.getRotationMatrix(rotation);
 
-        // // orientation = hduQuaternion(rotation);
-        // for (int i = 0; i < 4; i++) {
-        //     for (int j = 0; j < 4; j++) {
-        //         cout << apply_offset_transform.get(i, j) <<" ";
-        //     }
-        //     cout << endl;
-        // }
-
-        // device->pos[0] = positions[0];
-        // device->pos[1] = positions[1];
-        // device->pos[2] = positions[2];
+        // 赋值为 4*4 的 trans matrix
         for (int i = 0; i < 3; i++) {
-            device->pos[i] = apply_offset_transform.get(i, 3);
+            for (int j = 0; j < 3; j++) {
+                device->cur_trans_matrix(i, j) = rotation.get(j, i);
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            device->cur_trans_matrix(i, 3) = (double) transform.get(3, i);
+            positions[i] = transform.get(3, i);
         }
 
-
-        Eigen::Quaternionf quat(orientation[0], orientation[1], orientation[2], orientation[3]); // 四元数 w, x, y, z
-        Eigen::Matrix3f rx = quat.toRotationMatrix();
-
-        // 将四元数转换为欧拉角（单位是弧度）
-        Eigen::Vector3f euler_angles = rx.eulerAngles(2, 1, 0);
-
-        device->pos[3] = euler_angles[0];
-        device->pos[4] = euler_angles[1];
-        device->pos[5] = euler_angles[2];
-
-        // device->pos[3] = orientation[0];
-        // device->pos[4] = orientation[1];
-        // device->pos[5] = orientation[2];
-        // device->pos[6] = orientation[3];
+        // cout << "\n eigen rotation: \n" << device->cur_trans_matrix;
 
         HDint nbuttons;
         hdGetIntegerv(HD_CURRENT_BUTTONS, &nbuttons);
@@ -145,7 +114,6 @@ private:
 public:
     HapticDevice() : hHD(HD_INVALID_HANDLE), hPoseCallback(0), hForceCallback(0), button1(0), button2(0),
                      isRunning(false) {
-        fill(begin(pos), end(pos), 0.0);
     }
 
     ~HapticDevice() {
@@ -200,34 +168,27 @@ public:
             // 只按下了 button 1
             if (last_button_1_state == false) {
                 // 第一次按下的话
-                std::vector<double> last_vec_raw(std::begin(pos), std::end(pos));
-                last_vec.clear();
-                last_vec.assign(std::begin(last_vec_raw), std::end(last_vec_raw));
+                // 记录上一次的位置
+                last_trans_matrix = cur_trans_matrix;
                 last_button_1_state = true;
                 return build_json_from_cmd(DEV_TOUCH, CMD_UNKNOWN);
             }
-            std::vector<double> vec(std::begin(pos), std::end(pos));
             cout << "Button1 pressed! Sending data: " << endl;
+
             for (auto i = 0; i < 3; i++) {
-                // cout << " vec [" << i << "] " << vec[i] << endl;
-                const auto a = vec[i];
-                vec[i] -= last_vec[i];
+                const auto cur_pos = last_trans_matrix(i, 3);
+                cur_trans_matrix(i, 3) -= last_trans_matrix(i, 3);
                 if (!moveAbs) {
                     // 如果绝对位置控制 那么不需要记录上一次的位置
-                    last_vec[i] = a;
+                    last_trans_matrix(i, 3) = cur_pos;
                 }
-                // cout << " last_vec [" << i << "] "<< last_vec[i] << endl;
             }
-
-            for (auto i: vec) {
-                cout << i << " ";
-            }
-            cout << endl;
+            // cout << "trans matrix: \n" << cur_trans_matrix << endl;
             if (moveAbs) {
                 // 绝对位置控制
-                return build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE_ABS, vec);
+                return build_json_from_trans_matrix(DEV_TOUCH, CMD_MOVE_ABS, cur_trans_matrix);
             }
-            return build_json_from_pos_and_rot(DEV_TOUCH, CMD_MOVE, vec);
+            return build_json_from_trans_matrix(DEV_TOUCH, CMD_MOVE, cur_trans_matrix);
         } else if (!button1 && button2) {
             // 只按下了 button 2
             last_button_1_state = false;
